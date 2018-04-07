@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>eu.chargetime.ocpp</groupId>
-    <artifactId>v1_6-test</artifactId>
+    <artifactId>v1_6-stubs</artifactId>
     <version>0.5-SNAPSHOT</version>
 
-    <name>Java-OCA-OCPP v1.6 - Groovy integration test</name>
+    <name>Java-OCA-OCPP v1.6 - Integration test</name>
     <description>Integration test of OCA OCPP version 1.6</description>
     <url>https://github.com/ChargeTimeEU/Java-OCA-OCPP</url>
 
@@ -34,20 +34,6 @@
         <url>https://github.com/ChargeTimeEU/Java-OCA-OCPP.git</url>
     </scm>
 
-	  <pluginRepositories>
-	    <pluginRepository>
-	      <id>bintray</id>
-	      <name>Groovy Bintray</name>
-	      <url>https://dl.bintray.com/groovy/maven</url>
-	      <releases>
-	        <updatePolicy>never</updatePolicy>
-	      </releases>
-	      <snapshots>
-	        <enabled>false</enabled>
-	      </snapshots>
-	    </pluginRepository>
-	  </pluginRepositories>
-  
       <dependencies>
         <dependency>
             <groupId>eu.chargetime.ocpp</groupId>
@@ -57,11 +43,6 @@
         <dependency>
             <groupId>eu.chargetime.ocpp</groupId>
             <artifactId>v1_6</artifactId>
-            <version>0.5-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>eu.chargetime.ocpp</groupId>
-            <artifactId>v1_6-stubs</artifactId>
             <version>0.5-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -110,51 +91,41 @@
 
     <build>
         <plugins>
-	      <plugin>
-	        <artifactId>maven-compiler-plugin</artifactId>
-	        <version>3.7.0</version><!-- 3.1 is the minimum -->
-	        <configuration>
-	          <compilerId>groovy-eclipse-compiler</compilerId>
-	          <compilerArguments>
-	            <indy/>
-	          </compilerArguments>
-	        </configuration>
-	        <dependencies>
-	          <dependency>
-	            <groupId>org.codehaus.groovy</groupId>
-	            <artifactId>groovy-eclipse-compiler</artifactId>
-	            <version>2.9.2-04</version>
-	          </dependency>
-	          <dependency>
-	            <groupId>org.codehaus.groovy</groupId>
-	            <artifactId>groovy-eclipse-batch</artifactId>
-	            <version>2.4.14-01</version>
-	          </dependency>
-	        </dependencies>
-	      </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.20.1</version>
+                <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <includes>
-                        <include>**/*Test.java</include>
-                    </includes>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>integration-test</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <phase>integration-test</phase>
-                        <configuration>
-                            <includes>
-                                <include>**/*Spec.java</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                </executions>
+                <version>3.5.1</version>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-source-plugin</artifactId>
+              <version>2.2.1</version>
+              <executions>
+                <execution>
+                  <id>attach-sources</id>
+                    <phase>verify</phase>
+                  <goals>
+                    <goal>jar-no-fork</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <version>2.9.1</version>
+              <executions>
+                <execution>
+                  <id>attach-javadocs</id>
+                  <goals>
+                    <goal>jar</goal>
+                  </goals>
+                </execution>
+              </executions>
             </plugin>
         </plugins>
     </build>
