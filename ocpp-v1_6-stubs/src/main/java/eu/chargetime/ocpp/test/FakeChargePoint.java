@@ -17,6 +17,8 @@ import eu.chargetime.ocpp.model.smartcharging.SetChargingProfileRequest;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Calendar;
+import java.util.function.BiConsumer;
+import java.util.concurrent.CompletionStage;
 
 /*
  ChargeTime.eu - Java-OCA-OCPP
@@ -56,15 +58,23 @@ public class FakeChargePoint
     private Throwable receivedException;
     private String url;
 
-    public FakeChargePoint() throws MalformedURLException {
-        this(clientType.JSON);
-    }
-
     public enum clientType {
         JSON, SOAP
     }
 
+    public FakeChargePoint() throws MalformedURLException {
+        this(clientType.JSON, "localhost", 8887, null);
+    }
+
     public FakeChargePoint(clientType type) throws MalformedURLException {
+        this(type, "localhost", type == clientType.JSON ? 8887 : 8890, null);
+    }
+    
+    public FakeChargePoint(clientType type, String host) throws MalformedURLException {
+        this(type, host, type == clientType.JSON ? 8887 : 8890, null);
+    }
+    
+    public FakeChargePoint(clientType type, String host, int port, String path) throws MalformedURLException {
         core = new ClientCoreProfile(new ClientCoreEventHandler() {
             @Override
             public ChangeAvailabilityConfirmation handleChangeAvailabilityRequest(ChangeAvailabilityRequest request) {
@@ -153,12 +163,14 @@ public class FakeChargePoint
 
         switch (type) {
             case JSON:
-                client = new JSONClient(core, "testdummy");
-                url = "ws://127.0.0.1:8887";
+                client = new JSONClient(core, "ChargeTimeEclipse01");
+            	url = "ws://" + host + ":" + port;
+                if (path != null)
+                	url += "/" + path;
                 break;
             case SOAP:
-                client = new SOAPClient("me", new URL("http://127.0.0.1:8889"), core);
-                url = "http://127.0.0.1:8890";
+                client = new SOAPClient("me", new URL("http://" + host + ":" + port), core);
+            	url = "http://" + host + ":" + (port + 1);
                 break;
         }
 
@@ -167,17 +179,21 @@ public class FakeChargePoint
         client.addFeatureProfile(firmware);
     }
 
-    public void connect() {
+    public void connect(String vendor, String model, BiConsumer<Confirmation, Throwable> callback) {
         try {
             client.connect(url, new ClientEvents() {
                 @Override
                 public void connectionOpened() {
-                    
+                    try {
+                        CompletionStage<Confirmation> confirmation = client.send(core.createBootNotificationRequest(vendor, model));
+                        confirmation.whenComplete(callback);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
 
                 @Override
                 public void connectionClosed() {
-
                 }
             });
         } catch (Exception ex) {
@@ -190,9 +206,16 @@ public class FakeChargePoint
         send(request);
     }
 
-    public void sendAuthorizeRequest(String idToken) throws Exception {
-        Request request = core.createAuthorizeRequest(idToken);
-        send(request);
+    public void sendAuthorizeRequest(String idToken, BiConsumer<Confirmation, Throwable> callback)
+    {
+    	try {
+	        Request request = core.createAuthorizeRequest(idToken);
+	        // Client returns a promise which will be filled once it receives a confirmation.
+	        CompletionStage<Confirmation> confirmation = client.send(request);
+	        confirmation.whenComplete(callback);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     public void sendIncompleteAuthorizeRequest() throws Exception {
@@ -214,17 +237,19 @@ public class FakeChargePoint
         }
     }
 
-    public void sendStartTransactionRequest() throws Exception {
+    public void sendStartTransactionRequest(int connectorID, String idTag, int meter, BiConsumer<Confirmation, Throwable> callback) throws Exception {
         try {
-            Request request = core.createStartTransactionRequest(41, "some id", 42, Calendar.getInstance());
-            send(request);
+            Request request = core.createStartTransactionRequest(connectorID, idTag, meter, Calendar.getInstance());
+	        // Client returns a promise which will be filled once it receives a confirmation.
+	        CompletionStage<Confirmation> confirmation = client.send(request);
+	        confirmation.whenComplete(callback);
         } catch (PropertyConstraintException ex) {
             ex.printStackTrace();
         }
     }
 
-    public void sendStopTransactionRequest() throws Exception {
-        StopTransactionRequest request = core.createStopTransactionRequest(42, Calendar.getInstance(), 42);
+    public void sendStopTransactionRequest(int meter, int idTransaction) throws Exception {
+        StopTransactionRequest request = core.createStopTransactionRequest(meter, Calendar.getInstance(), idTransaction);
         send(request);
     }
 
